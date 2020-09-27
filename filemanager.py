@@ -16,7 +16,7 @@ class FileManager:
     # Adding data, unordered
     def addData(self, seqnum, data):
         if self.writePerPacket:
-            self.writePerPacket(seqnum, data)
+            self.writePacket(seqnum, data)
             self.size_downloaded += len(data)
         else:
             self.data.append(data)
