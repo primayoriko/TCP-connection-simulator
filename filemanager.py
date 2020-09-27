@@ -1,4 +1,5 @@
 import os
+import math
 from packet import Packet
 
 # class that have function split data/file into packet(s),
@@ -10,13 +11,18 @@ class FileManager:
         self.metadata = {'name': 'downloaded', 'size': 0}
         self.numpackets = 0
         self.checksum = 0
+        self.writePerPacket = False
 
     # Adding data, unordered
     def addData(self, seqnum, data):
-        self.data.append(data)
-        self.sequence.append(seqnum)
-        self.numpackets += 1
-        self.metadata['size'] += len(data)
+        if self.writePerPacket:
+            self.writePerPacket(seqnum, data)
+            self.size_downloaded += len(data)
+        else:
+            self.data.append(data)
+            self.sequence.append(seqnum)
+            self.numpackets += 1
+            self.metadata['size'] += len(data)
 
     # Ordering data before writing to a file
     def orderData(self):
@@ -27,7 +33,31 @@ class FileManager:
         self.data = new_data
         self.sequence = new_sequence
 
-    # Writing data to ./out/downloaded and print the checksum in 4 digit hex
+    # Optimization to write file per packet if packet size is known beforehand    
+    def addMetadata(self, name, size):
+        self.metadata['name'] = name
+        self.metadata['size'] = size
+        self.numpackets = self.totalPacketNeeded()
+        self.writePerPacket = True
+        self.size_downloaded = 0
+
+    # Get total packet needed if size is known
+    def totalPacketNeeded(self):
+        return math.ceil(self.metadata['size'] / 32767)
+
+    # Write data per packet received
+    def writePacket(self, seqnum, data):
+        file_offset = seqnum * 32767
+        output_file = os.path.join('.', 'out', self.metadata['name'])
+        with open(output_file, 'wb') as f:
+            f.seek(file_offset)
+            f.write(data)
+
+    # Check if File Manager has all the data if the size is known
+    def isComplete(self):
+        return self.metadata['size'] == self.size_downloaded
+
+    # Writing all data to ./out/downloaded and print the checksum in 4 digit hex
     def writeFile(self):
         self.orderData()
         self.checksum = self.generateChecksum()
