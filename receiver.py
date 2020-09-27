@@ -32,14 +32,8 @@ def run():
         data, addr = sock_listen.recv(MAX_SEG_SIZE)
         pkt = Packet.from_bytes(data)
 
-        # If pkt is the next in sequence
-        if pkt.seqnum == prev_seqnum + 1:
-            # If the packet is damaged
-            if not same_checksum(pkt):
-                sock_listen.sendto(
-                    generate_ack(prev_seqnum), addr
-                )
-                continue
+        # If pkt is the next in sequence and same checksum, append and send ack
+        if pkt.seqnum == prev_seqnum + 1 and same_checksum(pkt):
             
             # Append to received packet array
             packet_arr.append(pkt)
@@ -53,8 +47,6 @@ def run():
                 # End loop
                 break
 
-        else:
-            send_ack(sock_listen, prev_seqnum)
     
     # FileManager piece the data together here, save to ./out/downloaded
 
