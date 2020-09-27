@@ -3,18 +3,18 @@ import math
 import struct
 
 class Packet:
-     def __init__(self, pack_type, length, seqnum, checksum=-1, data=''):
+    def __init__(self, pack_type, length, seqnum, checksum=-1, data=''):
         self.seqnum = seqnum
         self.length = length
         self.data = data
         
-        if pack_type = 'DATA':
+        if pack_type == 'DATA':
             this.type = 0x0
-        elif pack_type = 'ACK':
+        elif pack_type == 'ACK':
             this.type = 0x1
-        elif pack_type = 'FIN':
+        elif pack_type == 'FIN':
             this.type = 0x2
-        elif pack_type = 'FIN-ACK':
+        elif pack_type == 'FIN-ACK':
             this.type = 0x3
 
         self.checksum = checksum
@@ -64,7 +64,7 @@ class Packet:
                         
         # Checksum all 16-bit block of data
         checksum = 0
-        for i in range(0, byte_all_data, 2)
+        for i in range(0, byte_all_data, 2):
             data_bits = int.from_bytes(all_data[i:i+2], byteorder='big')
             checksum ^= data_bits
         
