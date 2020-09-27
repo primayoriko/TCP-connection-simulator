@@ -3,7 +3,7 @@ import math
 import struct
 
 class Packet:
-     def __init__(self, pack_type, length, seqnum, checksum, data=''):
+     def __init__(self, pack_type, length, seqnum, checksum=-1, data=''):
         self.seqnum = seqnum
         self.length = length
         self.data = data
@@ -17,7 +17,7 @@ class Packet:
         elif pack_type = 'FIN-ACK':
             this.type = 0x3
 
-        self.checksum = Packet.checksum(self)
+        self.checksum = checksum
 
     # Comparison operators
     def __lt__(self, other):
@@ -58,11 +58,12 @@ class Packet:
         len_bits = format(packet.length, '#018b')[2:]
         seqdat_bits = format(packet.seqnum, '#018b')[2:]
 
-        all_data = type_bits + len_bits + seqdat_bits + packet.data.encode('UTF-8')
+        all_data = type_bits + len_bits + seqdat_bits + packet.data
         byte_all_data = math.ceil(len(all_data)/8)
         all_data = int(all_data, 2).to_bytes(byte_all_data, byteorder='big')
                         
         # Checksum all 16-bit block of data
+        checksum = 0
         for i in range(0, byte_all_data, 2)
             data_bits = int.from_bytes(all_data[i:i+2], byteorder='big')
             checksum ^= data_bits
@@ -75,14 +76,16 @@ class Packet:
         type_bits = format(packet_type, '#010b')[2:]
         len_bits = format(packet.length, '#018b')[2:]
         seqdat_bits = format(packet.seqnum, '#018b')[2:]
-        checksum_bits = format(packet.checksum, '#18b')[2:]
+
+        pkt_cs = Packet.checksum(packet)
+        checksum_bits = format(pkt_cs, '#18b')[2:]
 
         # Construct header to bytes
         head = type_bits + len_bits + seqdat_bits + checksum_bits
         head = int(head, 2).to_bytes(7, byteorder='big')
 
         # return header + payload
-        return head + packet.data.encode('UTF-8')
+        return head + packet.data
     
     @staticmethod
     def from_bytes(packet_bytes):
