@@ -46,6 +46,10 @@ def run():
                 )
                 # End loop
                 break
+            else:
+                sock_listen.sendto(
+                    generate_ack(prev_seqnum), addr
+                )
 
     
     # FileManager piece the data together here, save to ./out/downloaded
