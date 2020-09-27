@@ -9,13 +9,13 @@ class Packet:
         self.data = data
         
         if pack_type == 'DATA':
-            this.type = 0x0
+            self.type = 0x0
         elif pack_type == 'ACK':
-            this.type = 0x1
+            self.type = 0x1
         elif pack_type == 'FIN':
-            this.type = 0x2
+            self.type = 0x2
         elif pack_type == 'FIN-ACK':
-            this.type = 0x3
+            self.type = 0x3
 
         self.checksum = checksum
 
@@ -28,16 +28,16 @@ class Packet:
 
     # Flag 
     def is_fin(self):
-        return this.type == 0x2
+        return self.type == 0x2
     
     def is_finack(self):
-        return this.type == 0x3
+        return self.type == 0x3
     
     def is_ack(self):
-        return this.type == 0x1
+        return self.type == 0x1
 
     def is_data(self):
-        return this.type == 0x0
+        return self.type == 0x0
         
     # Static Packet util functions
     @staticmethod
@@ -54,7 +54,7 @@ class Packet:
     @staticmethod
     def checksum(packet):
         # Checksum attributes
-        type_bits = format(packet_type, '#010b')[2:]
+        type_bits = format(packet.type, '#010b')[2:]
         len_bits = format(packet.length, '#018b')[2:]
         seqdat_bits = format(packet.seqnum, '#018b')[2:]
 
@@ -73,7 +73,7 @@ class Packet:
     @staticmethod
     def to_bytes(packet):
         # Transforming numbers to bit strings, then append
-        type_bits = format(packet_type, '#010b')[2:]
+        type_bits = format(packet.type, '#010b')[2:]
         len_bits = format(packet.length, '#018b')[2:]
         seqdat_bits = format(packet.seqnum, '#018b')[2:]
 
