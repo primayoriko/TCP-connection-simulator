@@ -11,11 +11,14 @@ class FileManager:
         self.numpackets = 0
         self.checksum = 0
 
+    # Adding data, unordered
     def addData(self, seqnum, data):
         self.data.append(data)
         self.sequence.append(seqnum)
         self.numpackets += 1
+        self.metadata['size'] += len(data)
 
+    # Ordering data before writing to a file
     def orderData(self):
         new_sequence = [x for x in range(self.numpackets)]
         new_data = [b'' for x in range(self.numpackets)]
@@ -24,19 +27,23 @@ class FileManager:
         self.data = new_data
         self.sequence = new_sequence
 
+    # Writing data to ./out/downloaded and print the checksum in 4 digit hex
     def writeFile(self):
         self.orderData()
         self.checksum = self.generateChecksum()
         all_data = b''.join(self.data)
-        with open(self.metadata['name'], 'wb') as f:
+        output_file = os.path.join('.', 'out', self.metadata['name'])
+        with open(output_file, 'wb') as f:
             f.write(all_data)
         print(f'File <{self.metadata["name"]}> written with checksum: 0x{self.checksum:04x}')
 
+    # Adding file for sender
     def addFile(self, file_path):
         self.file_path = file_path
         self.initializeData()
         self.checksum = self.generateChecksum()
     
+    # Splitting file and get basic metadata info
     def initializeData(self):
         self.metadata['name'] = os.path.basename(self.file_path)
         self.metadata['size'] = os.path.getsize(self.file_path)
@@ -48,6 +55,7 @@ class FileManager:
                 data_chunk = f.read(32767)
         self.sequence = [x for x in range(self.numpackets)]
 
+    # Generate 16 bit xor checksum for all data
     def generateChecksum(self):
         all_data = b''.join(self.data)
         byte_all_data = self.metadata['size']
@@ -57,7 +65,7 @@ class FileManager:
             checksum ^= data_bits
         return checksum
 
-# testing purposes    
+# TESTING PURPOSES: shuffle data to simulate unordered sequence received
 def shuffleOrder(file_manager: FileManager):
     random.shuffle(file_manager.sequence)
     shuffled_data = []
@@ -71,6 +79,7 @@ if __name__ == "__main__":
     file_path = 'spesifikasi.pdf'
     file_manager = FileManager()
     file_manager.addFile(file_path)
+    print(f'File input checksum: 0x{file_manager.checksum:04x}')
     # dump(file_manager)
     file_manager.metadata['name'] = 'spesifikasi2.pdf'
     shuffleOrder(file_manager)

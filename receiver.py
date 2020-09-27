@@ -1,6 +1,7 @@
-from packet import Packet
 import socket
 import sys
+from packet import Packet
+from filemanager import FileManager
 
 PORT = 1337
 MAX_SEG_SIZE = 32774
@@ -24,7 +25,7 @@ def run():
     sock_listen.bind(PORT)
     
     # Resources to receive data
-    packet_arr = []
+    file_manager = FileManager()
     prev_seqnum = 0
 
     # Listen loop
@@ -36,7 +37,7 @@ def run():
         if pkt.seqnum == prev_seqnum + 1 and same_checksum(pkt):
             
             # Append to received packet array
-            packet_arr.append(pkt)
+            file_manager.addData(pkt.seqnum, pkt.data)
             prev_seqnum += 1
 
             if pkt.is_fin():
@@ -53,6 +54,7 @@ def run():
 
     
     # FileManager piece the data together here, save to ./out/downloaded
+    file_manager.writeFile()
 
 
 if __name__ == '__main__':
