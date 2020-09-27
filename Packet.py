@@ -17,7 +17,6 @@ class Packet:
 
         self.checksum = Packet.checksum(self)
 
-
     # Comparison operators
     def __lt__(self, other):
         return self.seqnum < other.seqnum
