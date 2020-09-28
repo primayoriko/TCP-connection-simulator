@@ -54,12 +54,7 @@ class Packet:
     @staticmethod
     def checksum(packet):
         # Checksum attributes
-        type_bits = format(packet.type, '#010b')[2:]
-        len_bits = format(packet.length, '#018b')[2:]
-        seqdat_bits = format(packet.seqnum, '#018b')[2:]
-
-        all_data = type_bits + len_bits + seqdat_bits 
-        all_data = int(all_data, 2).to_bytes(5, byteorder='big')
+        all_data = struct.pack('>b2H', packet.type, packet.length, packet.seqnum)
         all_data += packet.data
                         
         # Checksum all 16-bit block of data
@@ -73,16 +68,7 @@ class Packet:
     @staticmethod
     def to_bytes(packet):
         # Transforming numbers to bit strings, then append
-        type_bits = format(packet.type, '#010b')[2:]
-        len_bits = format(packet.length, '#018b')[2:]
-        seqdat_bits = format(packet.seqnum, '#018b')[2:]
-
-        pkt_cs = Packet.checksum(packet)
-        checksum_bits = format(pkt_cs, '#018b')[2:]
-
-        # Construct header to bytes
-        head = type_bits + len_bits + seqdat_bits + checksum_bits
-        head = int(head, 2).to_bytes(7, byteorder='big')
+        head = struct.pack('>b3H', packet.type, packet.length, packet.seqnum, Packet.checksum(packet))
 
         # return header + payload
         return head + packet.data
