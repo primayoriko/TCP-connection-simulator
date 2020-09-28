@@ -58,13 +58,13 @@ class Packet:
         len_bits = format(packet.length, '#018b')[2:]
         seqdat_bits = format(packet.seqnum, '#018b')[2:]
 
-        all_data = type_bits + len_bits + seqdat_bits + packet.data
-        byte_all_data = math.ceil(len(all_data)/8)
-        all_data = int(all_data, 2).to_bytes(byte_all_data, byteorder='big')
+        all_data = type_bits + len_bits + seqdat_bits 
+        all_data = int(all_data, 2).to_bytes(5, byteorder='big')
+        all_data += packet.data
                         
         # Checksum all 16-bit block of data
         checksum = 0
-        for i in range(0, byte_all_data, 2):
+        for i in range(0, len(all_data), 2):
             data_bits = int.from_bytes(all_data[i:i+2], byteorder='big')
             checksum ^= data_bits
         
@@ -78,7 +78,7 @@ class Packet:
         seqdat_bits = format(packet.seqnum, '#018b')[2:]
 
         pkt_cs = Packet.checksum(packet)
-        checksum_bits = format(pkt_cs, '#18b')[2:]
+        checksum_bits = format(pkt_cs, '#018b')[2:]
 
         # Construct header to bytes
         head = type_bits + len_bits + seqdat_bits + checksum_bits
@@ -90,7 +90,7 @@ class Packet:
     @staticmethod
     def from_bytes(packet_bytes):
         # Grab header from the first 7 bytes 
-        unpacked_header = struct.unpack('>H3I', packet_bytes[:7])
+        unpacked_header = struct.unpack('>b3H', packet_bytes[:7])
         packet_type = Packet.identify_type(unpacked_header[0])
         packet_length = unpacked_header[1]
         packet_seqnum = unpacked_header[2]
