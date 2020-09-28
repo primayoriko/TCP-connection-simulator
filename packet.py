@@ -3,7 +3,7 @@ import math
 import struct
 
 class Packet:
-    def __init__(self, pack_type, length, seqnum, checksum=-1, data=''):
+    def __init__(self, pack_type, length=0, seqnum=-1, checksum=-1, data=''):
         self.seqnum = seqnum
         self.length = length
         self.data = data
