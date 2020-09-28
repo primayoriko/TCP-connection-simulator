@@ -12,14 +12,35 @@ TIMEOUT = 3
 def get_time_millis():
     return int(round(time.time() * 1000))
 
+def create_packets(data_chunks):
+    packets, num = [], 0
+    for chunk in data_chunks:
+        num += 1
+        packet = Packet(
+                            pack_type='DATA',
+                            length=len(chunk),
+                            seqnum=num,
+                            data=chunk
+                            # data=format(
+                            #                 chunk, 
+                            #                 '#0{padding}b'
+                            #                     .format(padding=MAX_SEG_SIZE+2)
+                            #             )[2:]
+                        )
+        packet.checksum = Packet.checksum(packet)
+        packets.append(packet)
+
+    return packets
+
 def run():
     # Get parameter from command-line (*NEED TO BE FIXED*)
     hosts_target = sys.argv[1].split(',')
-    port_target = sys.argv[2]
+    port_target = int(sys.argv[2])
     file_path = sys.argv[3]
 
     file_manager = FileManager()
     file_manager.addFile(file_path)
+    packets = create_packets(file_manager.data)
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
@@ -29,35 +50,33 @@ def run():
     print(port_target)
     print(file_path)
 
+    print(f'File input checksum: 0x{file_manager.checksum:04x}')
+    print(file_manager.numpackets)
+
     # Sent packets one by one per target 
     for target in hosts_target:
         success = 0
         arr_succeed = [False for i in range(file_manager.numpackets)]
-
-        print(f'File input checksum: 0x{file_manager.checksum:04x}')
-        print(file_manager.numpackets)
 
         # Loop until all data sent
         while(success < file_manager.numpackets):
             for i in range(file_manager.numpackets):
                 if(not arr_succeed[i]):
                     sent = False
-                    # s.connect((HOST, PORT))
 
                     # Looping packet until successfully sent
                     while(not sent):
-                        sock.sendto(Packet.to_bytes(file_manager.data[i]),
+                        sock.sendto(Packet.to_bytes(packets[i]),
                                     (target, port_target)
                                 )
                         try:
-                            data, addr = socket.recvfrom(MAX_SEG_SIZE)
+                            data, addr = sock.recvfrom(MAX_SEG_SIZE)
                             packet = Packet.from_bytes(data)
                             if(packet.is_ack()):
                                 sent = True
                                 break
-                        except socket.Timeout:
+                        except socket.timeout:
                             print("Timeout reached, retrying....")
-                            pass
 
                     arr_succeed[i] = sent
                     success += 1 
@@ -74,14 +93,14 @@ def run():
                             (target, port_target)
                         )
                 try:
-                    data, addr = socket.recvfrom(MAX_SEG_SIZE)
+                    data, addr = sock.recvfrom(MAX_SEG_SIZE)
                     packet = Packet.from_bytes(data)
                     if(packet.is_finack()):
                         sent = True
                         break
-                except socket.Timeout:
+                except socket.timeout:
                     print("Timeout reached, retrying....")
-                    pass
+                    
             if(sent):
                 print("File successfully sent to {host}:{port}!"
                         .format(host=target, port=port_target) 

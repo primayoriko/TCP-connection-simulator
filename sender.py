@@ -70,12 +70,12 @@ def run():
                                     (target, port_target)
                                 )
                         try:
-                            data, addr = socket.recvfrom(MAX_SEG_SIZE)
+                            data, addr = sock.recvfrom(MAX_SEG_SIZE)
                             packet = Packet.from_bytes(data)
                             if(packet.is_ack()):
                                 sent = True
                                 break
-                        except socket.Timeout:
+                        except socket.timeout:
                             print("Timeout reached, retrying....")
 
                     arr_succeed[i] = sent
@@ -93,12 +93,12 @@ def run():
                             (target, port_target)
                         )
                 try:
-                    data, addr = socket.recvfrom(MAX_SEG_SIZE)
+                    data, addr = sock.recvfrom(MAX_SEG_SIZE)
                     packet = Packet.from_bytes(data)
                     if(packet.is_finack()):
                         sent = True
                         break
-                except socket.Timeout:
+                except socket.timeout:
                     print("Timeout reached, retrying....")
                     
             if(sent):
