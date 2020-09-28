@@ -3,7 +3,8 @@ import sys
 from packet import Packet
 from filemanager import FileManager
 
-PORT = 1337
+PORT = int(sys.argv[1])
+ADDRESS = "127.0.0.1"
 MAX_SEG_SIZE = 32774
 
 def same_checksum(packet):
@@ -21,7 +22,8 @@ def generate_ack(seqnum, fin_ack=False):
 def run():
     # Init socket
     sock_listen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock_listen.bind(PORT)
+    sock_listen.bind((ADDRESS, PORT))
+    print("[+] Listening on %s port %d" % (ADDRESS, PORT))
     
     # Resources to receive data
     file_manager = FileManager()
@@ -31,6 +33,8 @@ def run():
     while True:
         data, addr = sock_listen.recv(MAX_SEG_SIZE)
         pkt = Packet.from_bytes(data)
+        print([)
+
 
         # If pkt is the next in sequence and same checksum, append and send ack
         if pkt.seqnum == prev_seqnum + 1 and same_checksum(pkt):
