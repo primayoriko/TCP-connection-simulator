@@ -27,13 +27,13 @@ def run():
     
     # Resources to receive data
     file_manager = FileManager()
-    prev_seqnum = 0
+    prev_seqnum = -1
 
     # Listen loop
     while True:
-        data, addr = sock_listen.recv(MAX_SEG_SIZE)
+        data, addr = sock_listen.recvfrom(MAX_SEG_SIZE)
         pkt = Packet.from_bytes(data)
-        print([)
+        print("[%d] Hit!" % pkt.seqnum)
 
 
         # If pkt is the next in sequence and same checksum, append and send ack

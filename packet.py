@@ -55,8 +55,13 @@ class Packet:
     def checksum(packet):
         # Checksum attributes
         all_data = struct.pack('>b2H', packet.type, packet.length, packet.seqnum)
-        all_data += packet.data
-                        
+
+        if isinstance(packet.data, str):
+            all_data += packet.data.encode('UTF-8')
+        else:
+            all_data += packet.data
+
+
         # Checksum all 16-bit block of data
         checksum = 0
         for i in range(0, len(all_data), 2):
@@ -71,7 +76,10 @@ class Packet:
         head = struct.pack('>b3H', packet.type, packet.length, packet.seqnum, Packet.checksum(packet))
 
         # return header + payload
-        return head + packet.data
+        if isinstance(packet.data, str):
+            return head + packet.data.encode('UTF-8')
+        else:
+            return head + packet.data
     
     @staticmethod
     def from_bytes(packet_bytes):
