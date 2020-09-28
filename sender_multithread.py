@@ -12,17 +12,18 @@ TIMEOUT = 3
 def get_time_millis():
     return int(round(time.time() * 1000))
 
+# Packaging sequence of data into sequence of packets
 def create_packets(data_chunks):
-    packets, num = [], 0
-    for chunk in data_chunks:
-        num += 1
+    packets, total_chunks = [], len(data_chunks)
+    for num in range(total_chunks):
         packet = Packet(
-                            pack_type='DATA',
-                            length=len(chunk),
+                            pack_type='DATA' if num != total_chunks
+                                                else 'FIN',
+                            length=len(data_chunks[num]),
                             seqnum=num,
-                            data=chunk
+                            data=data_chunks[num]
                             # data=format(
-                            #                 chunk, 
+                            #                 data_chunks[i], 
                             #                 '#0{padding}b'
                             #                     .format(padding=MAX_SEG_SIZE+2)
                             #             )[2:]
@@ -33,7 +34,7 @@ def create_packets(data_chunks):
     return packets
 
 def run():
-    # Get parameter from command-line (*NEED TO BE FIXED*)
+    # Get parameter from command-line
     hosts_target = sys.argv[1].split(',')
     port_target = int(sys.argv[2])
     file_path = sys.argv[3]
@@ -87,24 +88,9 @@ def run():
         pass
 
         if(success == file_manager.numpackets):
-            fin_packet = Packet(pack_type='FIN')
-            while(not sent):
-                sock.sendto(Packet.to_bytes(fin_packet),
-                            (target, port_target)
-                        )
-                try:
-                    data, addr = sock.recvfrom(MAX_SEG_SIZE)
-                    packet = Packet.from_bytes(data)
-                    if(packet.is_finack()):
-                        sent = True
-                        break
-                except socket.timeout:
-                    print("Timeout reached, retrying....")
-                    
-            if(sent):
-                print("File successfully sent to {host}:{port}!"
-                        .format(host=target, port=port_target) 
-                    )
+            print("{file} successfully sent to {host}:{port}!"
+                    .format(file=file_path, host=target, port=port_target) 
+                )
 
 if __name__ == '__main__':
     run()
