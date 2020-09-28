@@ -2,7 +2,7 @@ import socket
 import sys
 import time
 from filemanager import FileManager
-# from packet import Packet
+from packet import Packet
 
 HOST = '127.0.0.1'
 PORT = 1338
@@ -25,8 +25,9 @@ def run():
     sock.settimeout(TIMEOUT)
     sock.bind((HOST, PORT))
     
+    print(hosts_target)
+    print(port_target)
     print(file_path)
-    print(targets)
 
     # Sent packets one by one per target 
     for target in hosts_target:
@@ -45,7 +46,7 @@ def run():
 
                     # Looping packet until successfully sent
                     while(not sent):
-                        s.sendto(Packet.to_bytes(file_manager.data[i]),
+                        sock.sendto(Packet.to_bytes(file_manager.data[i]),
                                     (target, port_target)
                                 )
                         try:
@@ -67,9 +68,9 @@ def run():
         pass
 
         if(success == file_manager.numpackets):
-            fin_packet = new Packet(pack_type='FIN')
+            fin_packet = Packet(pack_type='FIN')
             while(not sent):
-                s.sendto(Packet.to_bytes(fin_packet),
+                sock.sendto(Packet.to_bytes(fin_packet),
                             (target, port_target)
                         )
                 try:

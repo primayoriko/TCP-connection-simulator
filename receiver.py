@@ -6,7 +6,6 @@ from filemanager import FileManager
 PORT = 1337
 MAX_SEG_SIZE = 32774
 
-
 def same_checksum(packet):
     return Packet.checksum(packet) == packet.checksum
 
