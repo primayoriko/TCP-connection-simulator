@@ -35,8 +35,8 @@ def create_packets(data_chunks):
 
 def run():
     # Get parameter from command-line
-    hosts_target = sys.argv[1].split(',')
-    port_target = int(sys.argv[2])
+    reciever_hosts = sys.argv[1].split(',')
+    reciever_port = int(sys.argv[2])
     file_path = sys.argv[3]
 
     file_manager = FileManager()
@@ -47,15 +47,14 @@ def run():
     sock.settimeout(TIMEOUT)
     sock.bind((HOST, PORT))
     
-    print(hosts_target)
-    print(port_target)
-    print(file_path)
+    # print(reciever_hosts)
+    # print(reciever_port)
+    # print(file_path)
+    # print(f'File input checksum: 0x{file_manager.checksum:04x}')
+    # print(file_manager.numpackets)
 
-    print(f'File input checksum: 0x{file_manager.checksum:04x}')
-    print(file_manager.numpackets)
-
-    # Sent packets one by one per target 
-    for target in hosts_target:
+    # Sent packets one by one per reciever 
+    for reciever_host in reciever_hosts:
         success = 0
         arr_succeed = [False for i in range(file_manager.numpackets)]
 
@@ -68,7 +67,7 @@ def run():
                     # Looping packet until successfully sent
                     while(not sent):
                         sock.sendto(Packet.to_bytes(packets[i]),
-                                    (target, port_target)
+                                    (reciever_host, reciever_port)
                                 )
                         try:
                             data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
@@ -79,7 +78,7 @@ def run():
                                 (packets[i].is_fin() and response_packet.is_finack())
                             ):
                                 sent = True
-                                break
+                                print("Packet {0} successfully sended!".format(i))
                         except socket.timeout:
                             print("Timeout reached, retrying....")
 
@@ -93,7 +92,7 @@ def run():
 
         if(success == file_manager.numpackets):
             print("{file} successfully sent to {host}:{port}!"
-                    .format(file=file_path, host=target, port=port_target) 
+                    .format(file=file_path, host=reciever, port=reciever_port) 
                 )
 
 if __name__ == '__main__':
