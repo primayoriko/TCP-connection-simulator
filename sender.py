@@ -17,7 +17,7 @@ def create_packets(data_chunks):
     packets, total_chunks = [], len(data_chunks)
     for num in range(total_chunks):
         packet = Packet(
-                            pack_type='DATA' if num != total_chunks
+                            pack_type='DATA' if num != total_chunks - 1
                                                 else 'FIN',
                             length=len(data_chunks[num]),
                             seqnum=num,
@@ -71,9 +71,13 @@ def run():
                                     (target, port_target)
                                 )
                         try:
-                            data, addr = sock.recvfrom(MAX_SEG_SIZE)
-                            packet = Packet.from_bytes(data)
-                            if(packet.is_ack()):
+                            data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
+                            response_packet = Packet.from_bytes(data_response)
+                            if(
+                                (packets[i].is_data() and response_packet.is_ack())
+                                or
+                                (packets[i].is_fin() and response_packet.is_finack())
+                            ):
                                 sent = True
                                 break
                         except socket.timeout:
