@@ -69,6 +69,7 @@ def run():
                         )
             try:
                 data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
+                print(data_response)
                 response_packet = Packet.from_bytes(data_response)
                 if use_metadata and not succ_metadata[num]:
                     print(f"Metadata sent successfully to {receiver_hosts[num]}:{receiver_port}!")

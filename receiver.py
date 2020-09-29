@@ -32,6 +32,7 @@ def run():
     # Listen loop
     while True:
         data, addr = sock_listen.recvfrom(MAX_SEG_SIZE)
+        print(data)
         pkt = unpackPacket(data)
         if isinstance(pkt, Metadata):
             print(f"[-1] Metadata received! file_name={pkt.file_name} & file_size={pkt.file_size}")
