@@ -7,7 +7,7 @@ from filemanagersender import FileManagerSender
 HOST = '127.0.0.1'
 PORT = 1338
 MAX_SEG_SIZE = 32774
-TIMEOUT = 3 # 3 secs
+TIMEOUT = 0.5 # 500ms
 
 # Packaging sequence of data into sequence of packets
 def create_packets(data_chunks):
@@ -70,15 +70,21 @@ def run():
                         )
             try:
                 data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
+                print(data_response)
+                print('from')
+                print(addr)
+                print(f'at {receiver_hosts[num]} turn with curr_num = {curr_num}')
+                print(f'succ_packet for {receiver_hosts[num]}: {succ_packets_nums[num]}')
                 response_packet = Packet.from_bytes(data_response)
                 if use_metadata and not succ_metadata[num]:
                     print(f"Metadata sent successfully to {receiver_hosts[num]}:{receiver_port}!")
                     succ_metadata[num] = True
                 elif(
-                    (packets[curr_num].is_data() and response_packet.is_ack())
+                    (packets[curr_num].is_data() and response_packet.is_ack() and curr_num == response_packet.seqnum)
                     or
-                    (packets[curr_num].is_fin() and response_packet.is_finack())
+                    (packets[curr_num].is_fin() and response_packet.is_finack() and curr_num == response_packet.seqnum)
                 ):
+                    print(f'accepted from {addr}! now succpackets: {succ_packets_nums[num]} now prev seqnum: {response_packet.seqnum}')
                     succ_packets_nums[num] += 1
                     print(
                             "Packet {i} sent successfully to {host}:{port}!"

@@ -89,7 +89,7 @@ def run():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
-    sock.bind((HOST, PORT))
+    # sock.bind((HOST, PORT))
     
     # print(reciever_hosts)
     # print(reciever_port)
