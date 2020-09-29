@@ -1,9 +1,8 @@
 import os
 import math
-from packet import Packet
 
-# class that have function split data/file into packet(s),
-# checking packet, and arrange packet(s) into file
+# class that have function split data/file,
+# checking file checksum, and write data into file
 class FileManager:
     def __init__(self):
         self.data = []
@@ -13,7 +12,7 @@ class FileManager:
         self.checksum = 0
         self.writePerPacket = False
 
-    # Adding data, unordered
+    # Adding data
     def addData(self, seqnum, data):
         if self.writePerPacket:
             self.writePacket(seqnum, data)
@@ -57,9 +56,9 @@ class FileManager:
     def isComplete(self):
         return self.metadata['size'] == self.size_downloaded
 
-    # Writing all data to ./out/downloaded and print the checksum in 4 digit hex
+    # Writing all data to ./out/downloaded and print the checksum in 4 digit hex.
     def writeFile(self):
-        self.orderData()
+        # self.orderData()  Assume it's already ordered
         self.checksum = self.generateChecksum()
         all_data = b''.join(self.data)
         output_file = os.path.join('.', 'out', self.metadata['name'])
@@ -77,12 +76,17 @@ class FileManager:
     def initializeData(self):
         self.metadata['name'] = os.path.basename(self.file_path)
         self.metadata['size'] = os.path.getsize(self.file_path)
+        size_chunked = 0
         with open(self.file_path, 'rb') as f:
             data_chunk = f.read(32767)
             while data_chunk:
                 self.data.append(data_chunk)
                 self.numpackets += 1
+                size_chunked += len(data_chunk)
+                if self.numpackets % 10 == 0:
+                    print(f'Processing file: {size_chunked/self.metadata["size"]*100:3.0f}% [{size_chunked} readed out of {self.metadata["size"]}]')
                 data_chunk = f.read(32767)
+        print('Processing file done!')
         self.sequence = [x for x in range(self.numpackets)]
 
     # Generate 16 bit xor checksum for all data
