@@ -22,7 +22,7 @@ def generate_ack(seqnum, fin_ack=False):
 def run():
     # Init socket
     sock_listen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock_listen.bind((ADDRESS, PORT))
+    sock_listen.bind(('', PORT))
     print("[+] Listening on %s port %d" % (ADDRESS, PORT))
     
     # Resources to receive data
