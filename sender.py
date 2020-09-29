@@ -79,9 +79,9 @@ def run():
                     print(f"Metadata sent successfully to {receiver_hosts[num]}:{receiver_port}!")
                     succ_metadata[num] = True
                 elif(
-                    (packets[curr_num].is_data() and response_packet.is_ack())
+                    (packets[curr_num].is_data() and response_packet.is_ack() and curr_num == response_packet.seqnum)
                     or
-                    (packets[curr_num].is_fin() and response_packet.is_finack())
+                    (packets[curr_num].is_fin() and response_packet.is_finack() and curr_num == response_packet.seqnum)
                 ):
                     print(f'accepted from {addr}! now succpackets: {succ_packets_nums[num]} now prev seqnum: {response_packet.seqnum}')
                     succ_packets_nums[num] += 1

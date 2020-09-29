@@ -32,7 +32,7 @@ def run():
     # Listen loop
     while True:
         data, addr = sock_listen.recvfrom(MAX_SEG_SIZE)
-        print(data)
+        # print(data)
         print(f'received from {socket.gethostname()}|{socket.gethostbyname(socket.gethostname())}')
         print(f'prev seqnum: {prev_seqnum}')
         pkt = unpackPacket(data)
@@ -53,6 +53,21 @@ def run():
             file_manager.addData(pkt.seqnum, pkt.data)
             prev_seqnum += 1
 
+            if pkt.is_fin():
+                # Send fin-ack packet
+                sock_listen.sendto(
+                    generate_ack(prev_seqnum, True), addr
+                )
+                # End loop
+                break
+            else:
+                sock_listen.sendto(
+                    generate_ack(prev_seqnum), addr
+                )
+        elif pkt.seqnum == prev_seqnum and same_checksum(pkt):
+            print('NOT NEXT IN SEQUENCE (ACK GA NYAMPE SENDER)')
+            print(f'pkt.seqnum: {pkt.seqnum}|prev_seqnum: {prev_seqnum}')
+            print('Sending again ack for the packet...')
             if pkt.is_fin():
                 # Send fin-ack packet
                 sock_listen.sendto(
