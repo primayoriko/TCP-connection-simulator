@@ -18,7 +18,7 @@ class FileManager:
         if self.writePerPacket:
             self.writePacket(seqnum, data)
             self.size_downloaded += len(data)
-            print(f'File written: {self.size_downloaded/self.metadata["size"]:3.0f}% {self.size_downloaded}/{self.metadata["size"]}')
+            print(f'File written: {self.size_downloaded/self.metadata["size"]*100:3.0f}% {self.size_downloaded}/{self.metadata["size"]}')
         else:
             self.data.append(data)
             self.sequence.append(seqnum)
