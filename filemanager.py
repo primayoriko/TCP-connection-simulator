@@ -10,38 +10,24 @@ class FileManager:
         self.metadata = {'name': 'downloaded', 'size': 0}
         self.size_downloaded = 0
         self.numpackets = 0
-        self.writePerPacket = False
         self.firstWrite = True
 
     # Adding data
     def addData(self, seqnum, data):
-        if self.writePerPacket:
-            self.writePacket(seqnum, data)
-            self.size_downloaded += len(data)
-            print(f'File written: {self.size_downloaded/self.metadata["size"]*100:3.0f}% {self.size_downloaded}/{self.metadata["size"]}')
-        else:
-            self.data.append(data)
-            self.sequence.append(seqnum)
-            self.numpackets += 1
+        self.writePacket(seqnum, data)
+        self.size_downloaded += len(data)
+        if self.metadata['name'] == 'downloaded':
             self.metadata['size'] += len(data)
-            self.size_downloaded += len(data)
-
-    # Ordering data before writing to a file
-    def orderData(self):
-        new_sequence = [x for x in range(self.numpackets)]
-        new_data = [b'' for x in range(self.numpackets)]
-        for idx, i in enumerate(self.sequence):
-            new_data[i] = self.data[idx]
-        self.data = new_data
-        self.sequence = new_sequence
+            self.numpackets += 1
+            print(f'Total file data written: {self.size_downloaded} | total numpackets received: {self.numpackets}')    
+        else:
+            print(f'File data written: {self.size_downloaded/self.metadata["size"]*100:3.0f}% {self.size_downloaded}/{self.metadata["size"]}')
 
     # Optimization to write file per packet if packet size is known beforehand
     def addMetadata(self, name, size):
         self.metadata['name'] = name
         self.metadata['size'] = size
         self.numpackets = self.totalPacketNeeded()
-        self.writePerPacket = True
-        self.size_downloaded = 0
 
     # Get total packet needed if size is known
     def totalPacketNeeded(self):
@@ -65,16 +51,6 @@ class FileManager:
     def isComplete(self):
         return self.metadata['size'] == self.size_downloaded
 
-    # Writing all data to ./out/downloaded and print the checksum in 4 digit hex.
-    def writeFile(self):
-        # self.orderData()  Assume it's already ordered
-        if not self.writePerPacket:
-            all_data = b''.join(self.data)
-            output_file = os.path.join('.', 'out', self.metadata['name'])
-            with open(output_file, 'wb') as f:
-                f.write(all_data)
-        print(f'File <{self.metadata["name"]}> written')
-
     # Adding file for sender
     def addFile(self, file_path):
         self.file_path = file_path
@@ -96,14 +72,6 @@ class FileManager:
                 data_chunk = f.read(32767)
         print('Processing file done!')
         self.sequence = [x for x in range(self.numpackets)]
-
-# TESTING PURPOSES: shuffle data to simulate unordered sequence received
-def shuffleOrder(file_manager: FileManager):
-    random.shuffle(file_manager.sequence)
-    shuffled_data = []
-    for i in file_manager.sequence:
-        shuffled_data.append(file_manager.data[i])
-    file_manager.data = shuffled_data
 
 if __name__ == "__main__":
     # from dumper import dump
