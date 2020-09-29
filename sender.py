@@ -35,8 +35,8 @@ def create_packets(data_chunks):
 
 def run():
     # Get parameter from command-line
-    reciever_hosts = sys.argv[1].split(',')
-    reciever_port = int(sys.argv[2])
+    receiver_hosts = sys.argv[1].split(',')
+    receiver_port = int(sys.argv[2])
     file_path = sys.argv[3]
 
     file_manager = FileManager()
@@ -47,14 +47,14 @@ def run():
     sock.settimeout(TIMEOUT)
     sock.bind((HOST, PORT))
     
-    # print(reciever_hosts)
-    # print(reciever_port)
+    # print(receiver_hosts)
+    # print(receiver_port)
     # print(file_path)
     # print(f'File input checksum: 0x{file_manager.checksum:04x}')
     # print(file_manager.numpackets)
 
-    # Sent packets one by one per reciever 
-    for reciever_host in reciever_hosts:
+    # Sent packets one by one per receiver 
+    for receiver_host in receiver_hosts:
         success = 0
         arr_succeed = [False for i in range(file_manager.numpackets)]
 
@@ -67,7 +67,7 @@ def run():
                     # Looping packet until successfully sent
                     while(not sent):
                         sock.sendto(Packet.to_bytes(packets[i]),
-                                    (reciever_host, reciever_port)
+                                    (receiver_host, receiver_port)
                                 )
                         try:
                             data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
@@ -87,12 +87,12 @@ def run():
                     print("Status : " + str(success) + "/" + 
                             str(file_manager.numpackets) + " packet(s) sent"
                         )
-                    print("Details : " +str(arr_succeed))
+                    # print("Details : " +str(arr_succeed))
         pass
 
         if(success == file_manager.numpackets):
             print("{file} successfully sent to {host}:{port}!"
-                    .format(file=file_path, host=reciever, port=reciever_port) 
+                    .format(file=file_path, host=receiver_host, port=receiver_port) 
                 )
 
 if __name__ == '__main__':
