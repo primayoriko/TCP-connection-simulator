@@ -6,7 +6,7 @@ from packet import Metadata, Packet
 HOST = '127.0.0.1'
 PORT = 1338
 MAX_SEG_SIZE = 32774
-TIMEOUT = 3 # 3 secs
+TIMEOUT = 1 # 1 secs
 
 # Packaging sequence of data into sequence of packets
 def create_packets(data_chunks):
