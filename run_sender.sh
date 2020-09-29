@@ -7,4 +7,4 @@
 # Contoh: echo -e "$1\n$2\n$3" | python3 sender.py
 # echo "Sender"
 
-echo -e "$1\n$2\n$3" | python3 sender.py
+python3 sender.py $1 $2 $3
