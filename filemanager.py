@@ -64,7 +64,7 @@ class FileManager:
         output_file = os.path.join('.', 'out', self.metadata['name'])
         with open(output_file, 'wb') as f:
             f.write(all_data)
-        print(f'File <{self.metadata["name"]}> written with checksum: 0x{self.checksum:04x}')
+        print(f'File <{self.metadata["name"]}> written')
 
     # Adding file for sender
     def addFile(self, file_path):
@@ -102,7 +102,6 @@ if __name__ == "__main__":
     file_path = 'Adobe.Photoshop.Lightroom.Classic.v8.4.1.10.Full.Version.7z'
     file_manager = FileManager()
     file_manager.addFile(file_path)
-    print(f'File input checksum: 0x{file_manager.checksum:04x}')
     # dump(file_manager)
     # shuffleOrder(file_manager)
     file_manager.writeFile()
