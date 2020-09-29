@@ -68,13 +68,13 @@ def reciever_threaded(sock, reciever_addr, reciever_port, packets):
                 success += 1 
                 print(
                         "Status : {0}/{1} packet(s) sent"
-                            .format(success, file_manager.numpackets)
+                            .format(success, numpackets)
                     )
-                print("Details : " +str(arr_succeed))
+                print("Details : " + str(arr_succeed))
     
-    if(success == file_manager.numpackets):
-        print("{file} successfully sent to {host}:{port}!"
-                .format(file=file_path, host=reciever_addr, port=reciever_port) 
+    if(success == numpackets):
+        print("File successfully sent to {host}:{port}!"
+                .format(host=reciever_addr, port=reciever_port) 
             )
 
 def run():

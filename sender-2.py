@@ -1,29 +1,21 @@
 import socket
 import sys
-from filemanager import FileManager
 from packet import Metadata, Packet
-from filemanagersender import FileManagerSender
+from filemanager_sender import FileManagerSender
 
 HOST = '127.0.0.1'
 PORT = 1338
 MAX_SEG_SIZE = 32774
 TIMEOUT = 3 # 3 secs
 
-# Packaging sequence of data into sequence of packets
-def create_packets(data_chunks):
-    packets, total_chunks = [], len(data_chunks)
-    for num in range(total_chunks):
-        packet = Packet(
-                            pack_type='DATA' if num != total_chunks - 1
-                                                else 'FIN',
-                            length=len(data_chunks[num]),
-                            seqnum=num,
-                            data=data_chunks[num]
-                        )
-        packet.checksum = Packet.checksum(packet)
-        packets.append(packet)
-
-    return packets
+def create_packet(data_chunk):
+    return Packet(
+                    pack_type='DATA' if num != total_chunks - 1
+                                        else 'FIN',
+                    length=len(data_chunks[num]),
+                    seqnum=num,
+                    data=data_chunks[num]
+                )
 
 def run():
     # Get parameter from command-line
@@ -34,10 +26,8 @@ def run():
     if len(sys.argv) > 4:
         use_metadata = sys.argv[4]
 
-    file_manager = FileManager()
-    file_manager.addFile(file_path)
-    packets = create_packets(file_manager.data)
-    packets_num = len(packets)
+    file_manager = FileManagerSender(file_path)
+    packets_num = file_manager.total_chunk
 
     finished, receivers_num = 0, len(receiver_hosts)
     succ_packets_nums = [0 for i in range(receivers_num)]
@@ -47,12 +37,6 @@ def run():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
-    
-    # print(receiver_hosts)
-    # print(receiver_port)
-    # print(file_path)
-    # print(f'File input checksum: 0x{file_manager.checksum:04x}')
-    # print(file_manager.numpackets)
 
     while(finished < receivers_num):
         for num in range(receivers_num):
@@ -60,12 +44,13 @@ def run():
             if(curr_num == packets_num):
                 continue
             
+            packet = create_packet(file_manager.getChunk(curr_num))
             if use_metadata and not succ_metadata[num]:
                 sock.sendto(Metadata.to_bytes(metadata),
                         (receiver_hosts[num], receiver_port)
                     )
             else:
-                sock.sendto(Packet.to_bytes(packets[curr_num]),
+                sock.sendto(Packet.to_bytes(packet),
                             (receiver_hosts[num], receiver_port)
                         )
             try:
@@ -75,9 +60,9 @@ def run():
                     print(f"Metadata sent successfully to {receiver_hosts[num]}:{receiver_port}!")
                     succ_metadata[num] = True
                 elif(
-                    (packets[curr_num].is_data() and response_packet.is_ack())
+                    (packet.is_data() and response_packet.is_ack())
                     or
-                    (packets[curr_num].is_fin() and response_packet.is_finack())
+                    (packet.is_fin() and response_packet.is_finack())
                 ):
                     succ_packets_nums[num] += 1
                     print(
@@ -106,8 +91,8 @@ def run():
                             .format(host = receiver_hosts[num])
                     )
 
-    if(finished == packets_num):
-        print("All file transfer succeed!!")
+    if(finished == receivers_num):
+        print("All targets receive file successfully!!")
 
 if __name__ == '__main__':
     run()
