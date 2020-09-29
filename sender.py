@@ -46,7 +46,6 @@ def run():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
-    # sock.bind((HOST, PORT))
     
     # print(receiver_hosts)
     # print(receiver_port)

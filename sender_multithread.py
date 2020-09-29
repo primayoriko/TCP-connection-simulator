@@ -27,11 +27,6 @@ def create_packets(data_chunks):
                             length=len(data_chunks[num]),
                             seqnum=num,
                             data=data_chunks[num]
-                            # data=format(
-                            #                 data_chunks[i], 
-                            #                 '#0{padding}b'
-                            #                     .format(padding=MAX_SEG_SIZE+2)
-                            #             )[2:]
                         )
         packet.checksum = Packet.checksum(packet)
         packets.append(packet)
