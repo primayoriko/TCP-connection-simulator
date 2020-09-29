@@ -64,7 +64,7 @@ def run():
 
     
     # FileManager piece the data together here, save to ./out/downloaded
-    file_manager.writeFile()
+    print(f'Writing data complete! {file_manager.metadata["name"]} with size {file_manager.size_downloaded} successfully written to ./out!')
 
 
 if __name__ == '__main__':
