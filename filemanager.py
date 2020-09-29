@@ -11,12 +11,14 @@ class FileManager:
         self.size_downloaded = 0
         self.numpackets = 0
         self.writePerPacket = False
+        self.firstWrite = True
 
     # Adding data
     def addData(self, seqnum, data):
         if self.writePerPacket:
             self.writePacket(seqnum, data)
             self.size_downloaded += len(data)
+            print(f'File written: {self.size_downloaded/self.metadata["size"]:3.0f}% {self.size_downloaded}/{self.metadata["size"]}')
         else:
             self.data.append(data)
             self.sequence.append(seqnum)
@@ -33,7 +35,7 @@ class FileManager:
         self.data = new_data
         self.sequence = new_sequence
 
-    # Optimization to write file per packet if packet size is known beforehand    
+    # Optimization to write file per packet if packet size is known beforehand
     def addMetadata(self, name, size):
         self.metadata['name'] = name
         self.metadata['size'] = size
@@ -49,9 +51,15 @@ class FileManager:
     def writePacket(self, seqnum, data):
         file_offset = seqnum * 32767
         output_file = os.path.join('.', 'out', self.metadata['name'])
-        with open(output_file, 'wb') as f:
-            f.seek(file_offset)
-            f.write(data)
+        if self.firstWrite:
+            self.firstWrite = False
+            with open(output_file, 'wb') as f:
+                f.seek(file_offset)
+                f.write(data)
+        else:
+            with open(output_file, 'r+b') as f:
+                f.seek(file_offset)
+                f.write(data)
 
     # Check if File Manager has all the data if the size is known
     def isComplete(self):
@@ -60,17 +68,18 @@ class FileManager:
     # Writing all data to ./out/downloaded and print the checksum in 4 digit hex.
     def writeFile(self):
         # self.orderData()  Assume it's already ordered
-        all_data = b''.join(self.data)
-        output_file = os.path.join('.', 'out', self.metadata['name'])
-        with open(output_file, 'wb') as f:
-            f.write(all_data)
+        if not self.writePerPacket:
+            all_data = b''.join(self.data)
+            output_file = os.path.join('.', 'out', self.metadata['name'])
+            with open(output_file, 'wb') as f:
+                f.write(all_data)
         print(f'File <{self.metadata["name"]}> written')
 
     # Adding file for sender
     def addFile(self, file_path):
         self.file_path = file_path
         self.initializeData()
-    
+
     # Splitting file and get basic metadata info
     def initializeData(self):
         self.metadata['name'] = os.path.basename(self.file_path)

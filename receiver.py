@@ -1,6 +1,6 @@
 import socket
 import sys
-from packet import Packet
+from packet import Packet, Metadata, unpackPacket
 from filemanager import FileManager
 
 PORT = int(sys.argv[1])
@@ -32,7 +32,14 @@ def run():
     # Listen loop
     while True:
         data, addr = sock_listen.recvfrom(MAX_SEG_SIZE)
-        pkt = Packet.from_bytes(data)
+        pkt = unpackPacket(data)
+        if isinstance(pkt, Metadata):
+            print(f"[-1] Metadata received! file_name={pkt.file_name} & file_size={pkt.file_size}")
+            file_manager.addMetadata(pkt.file_name, pkt.file_size)
+            sock_listen.sendto(
+                    generate_ack(0), addr
+                )
+            continue
         print("[%d] Hit!" % pkt.seqnum)
 
 

@@ -1,7 +1,7 @@
 import socket
 import sys
 from filemanager import FileManager
-from packet import Packet
+from packet import Metadata, Packet
 
 HOST = '127.0.0.1'
 PORT = 1338
@@ -29,6 +29,9 @@ def run():
     receiver_hosts = sys.argv[1].split(',')
     receiver_port = int(sys.argv[2])
     file_path = sys.argv[3]
+    use_metadata = False
+    if len(sys.argv) > 4:
+        use_metadata = sys.argv[4]
 
     file_manager = FileManager()
     file_manager.addFile(file_path)
@@ -37,6 +40,9 @@ def run():
 
     finished, receivers_num = 0, len(receiver_hosts)
     succ_packets_nums = [0 for i in range(receivers_num)]
+    if use_metadata:
+        succ_metadata = [False for i in range(receivers_num)]
+        metadata = Metadata(file_manager.metadata['name'], file_manager.metadata['size'])
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
@@ -54,13 +60,21 @@ def run():
             if(curr_num == packets_num):
                 continue
             
-            sock.sendto(Packet.to_bytes(packets[curr_num]),
+            if use_metadata and not succ_metadata[num]:
+                sock.sendto(Metadata.to_bytes(metadata),
                         (receiver_hosts[num], receiver_port)
                     )
+            else:
+                sock.sendto(Packet.to_bytes(packets[curr_num]),
+                            (receiver_hosts[num], receiver_port)
+                        )
             try:
                 data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
                 response_packet = Packet.from_bytes(data_response)
-                if(
+                if use_metadata and not succ_metadata[num]:
+                    print(f"Metadata sent successfully to {receiver_hosts[num]}:{receiver_port}!")
+                    succ_metadata[num] = True
+                elif(
                     (packets[curr_num].is_data() and response_packet.is_ack())
                     or
                     (packets[curr_num].is_fin() and response_packet.is_finack())
@@ -72,10 +86,13 @@ def run():
                         )
 
             except socket.timeout:
-                print(
-                        "Packet {i} failed to sent to {host}:{port}!"
-                            .format(i=curr_num, host=receiver_hosts[num], port=receiver_port)
-                    )
+                if use_metadata and not succ_metadata[num]:
+                    print(f"Metadata failed to sent to {receiver_hosts[num]}:{receiver_port}!")
+                else:
+                    print(
+                            "Packet {i} failed to sent to {host}:{port}!"
+                                .format(i=curr_num, host=receiver_hosts[num], port=receiver_port)
+                        )
             
             finally:
                 print(
@@ -83,6 +100,7 @@ def run():
                             .format(receiver_hosts[num], succ_packets_nums[num], packets_num)
                     )
                 if(succ_packets_nums[num] == packets_num):
+                    finished += 1
                     print(
                         "Transfer to {host} finished!"
                             .format(host = receiver_hosts[num])
