@@ -40,7 +40,6 @@ def run():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
-    # sock.bind((HOST, PORT))
     
     # print(receiver_hosts)
     # print(receiver_port)
@@ -83,6 +82,7 @@ def run():
                             .format(receiver_hosts[num], succ_packets_nums[num], packets_num)
                     )
                 if(succ_packets_nums[num] == packets_num):
+                    finished += 1
                     print(
                         "Transfer to {host} finished!"
                             .format(host = receiver_hosts[num])
