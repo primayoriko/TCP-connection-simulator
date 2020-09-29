@@ -84,15 +84,16 @@ def run():
 
                     arr_succeed[i] = sent
                     success += 1 
-                    print("Status : " + str(success) + "/" + 
-                            str(file_manager.numpackets) + " packet(s) sent"
+                    print(
+                            "Status : {0}/{1} packet(s) sent"
+                                .format(success, file_manager.numpackets)
                         )
                     print("Details : " +str(arr_succeed))
         pass
 
         if(success == file_manager.numpackets):
             print("{file} successfully sent to {host}:{port}!"
-                    .format(file=file_path, host=reciever, port=reciever_port) 
+                    .format(file=file_path, host=reciever_host, port=reciever_port) 
                 )
 
 if __name__ == '__main__':

@@ -38,7 +38,10 @@ def create_packets(data_chunks):
 
     return packets
 
-def send_file_threaded(sock, reciever_addr, reciever_port, packets):
+def send_packet_threaded():
+    return 0
+
+def reciever_threaded(sock, reciever_addr, reciever_port, packets):
     numpackets, success = len(packets), 0
     arr_succeed = [False for i in range(numpackets)]
 
@@ -68,14 +71,15 @@ def send_file_threaded(sock, reciever_addr, reciever_port, packets):
 
                 arr_succeed[i] = sent
                 success += 1 
-                print("Status : " + str(success) + "/" + 
-                        str(file_manager.numpackets) + " packet(s) sent"
+                print(
+                        "Status : {0}/{1} packet(s) sent"
+                            .format(success, file_manager.numpackets)
                     )
                 print("Details : " +str(arr_succeed))
     
     if(success == file_manager.numpackets):
         print("{file} successfully sent to {host}:{port}!"
-                .format(file=file_path, host=reciever, port=reciever_port) 
+                .format(file=file_path, host=reciever_addr, port=reciever_port) 
             )
 
 def run():
@@ -101,7 +105,7 @@ def run():
     # Sent packets one by one per reciever 
     threads = [
                 threading.Thread(
-                                    target=send_file_threaded,
+                                    target=reciever_threaded,
                                     args=(sock, reciever_addr, reciever_port, packets,)
                                 )
                 for reciever_addr in reciever_hosts
