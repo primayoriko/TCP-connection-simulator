@@ -33,6 +33,8 @@ def run():
     while True:
         data, addr = sock_listen.recvfrom(MAX_SEG_SIZE)
         print(data)
+        print(f'received from {socket.gethostname()}|{socket.gethostbyname(socket.gethostname())}')
+        print(f'prev seqnum: {prev_seqnum}')
         pkt = unpackPacket(data)
         if isinstance(pkt, Metadata):
             print(f"[-1] Metadata received! file_name={pkt.file_name} & file_size={pkt.file_size}")
@@ -62,6 +64,10 @@ def run():
                 sock_listen.sendto(
                     generate_ack(prev_seqnum), addr
                 )
+        else:
+            print('NOT NEXT IN SEQUENCE/WRONG CHECKSUM')
+            print(f'received checksum: {Packet.checksum(pkt)} | Data checksum: {pkt.checksum}')
+            print(f'pkt.seqnum: {pkt.seqnum}|prev_seqnum: {prev_seqnum}')
 
     
     # FileManager piece the data together here, save to ./out/downloaded

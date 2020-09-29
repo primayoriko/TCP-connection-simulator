@@ -70,6 +70,10 @@ def run():
             try:
                 data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
                 print(data_response)
+                print('from')
+                print(addr)
+                print(f'at {receiver_hosts[num]} turn with curr_num = {curr_num}')
+                print(f'succ_packet for {receiver_hosts[num]}: {succ_packets_nums[num]}')
                 response_packet = Packet.from_bytes(data_response)
                 if use_metadata and not succ_metadata[num]:
                     print(f"Metadata sent successfully to {receiver_hosts[num]}:{receiver_port}!")
@@ -79,6 +83,7 @@ def run():
                     or
                     (packets[curr_num].is_fin() and response_packet.is_finack())
                 ):
+                    print(f'accepted from {addr}! now succpackets: {succ_packets_nums[num]} now prev seqnum: {response_packet.seqnum}')
                     succ_packets_nums[num] += 1
                     print(
                             "Packet {i} sent successfully to {host}:{port}!"
