@@ -70,7 +70,7 @@ def reciever_threaded(sock, reciever_addr, reciever_port, packets):
                         "Status : {0}/{1} packet(s) sent"
                             .format(success, numpackets)
                     )
-                print("Details : " +str(arr_succeed))
+                print("Details : " + str(arr_succeed))
     
     if(success == numpackets):
         print("File successfully sent to {host}:{port}!"
