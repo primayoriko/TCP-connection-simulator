@@ -6,6 +6,7 @@ from filemanager import FileManager
 PORT = int(sys.argv[1])
 ADDRESS = "127.0.0.1"
 MAX_SEG_SIZE = 32774
+TIMEOUT = 0.5 # 500ms
 
 def same_checksum(packet):
     return Packet.checksum(packet) == packet.checksum
@@ -22,7 +23,7 @@ def generate_ack(seqnum, fin_ack=False):
 def run():
     # Init socket
     sock_listen = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock_listen.bind(('', PORT))
+    sock_listen.bind((ADDRESS, PORT))
     print("[+] Listening on %s port %d" % (ADDRESS, PORT))
     
     # Resources to receive data
@@ -58,8 +59,24 @@ def run():
                 sock_listen.sendto(
                     generate_ack(prev_seqnum, True), addr
                 )
-                # End loop
-                break
+                # Wait to ensure non fin packet retransmit. Otherwise end loop
+                sock_listen.settimeout(TIMEOUT)
+                while True:
+                    try:
+                        data, addr = sock_listen.recvfrom(MAX_SEG_SIZE)
+                        pkt = unpackPacket(data)
+                        assert pkt.is_fin()
+                        print('Resending again fin-ack...')
+                        # resend fin-ack packet
+                        sock_listen.sendto(
+                            generate_ack(prev_seqnum, True), addr
+                        )
+                    except socket.timeout:
+                        # Break while loop:
+                        break
+
+                # Break main loop
+                break            
             else:
                 sock_listen.sendto(
                     generate_ack(prev_seqnum), addr
@@ -73,9 +90,26 @@ def run():
                 sock_listen.sendto(
                     generate_ack(prev_seqnum, True), addr
                 )
-                # End loop
-                break
+                # Wait to ensure non fin packet retransmit. Otherwise end loop
+                sock_listen.settimeout(TIMEOUT)
+                while True:
+                    try:
+                        data, addr = sock_listen.recvfrom(MAX_SEG_SIZE)
+                        pkt = unpackPacket(data)
+                        assert pkt.is_fin()
+                        print('Resending again fin-ack...')
+                        # resend fin-ack packet
+                        sock_listen.sendto(
+                            generate_ack(prev_seqnum, True), addr
+                        )
+                    except socket.timeout:
+                        # Break while loop:
+                        break
+
+                # Break main loop
+                break                    
             else:
+                # Send ack
                 sock_listen.sendto(
                     generate_ack(prev_seqnum), addr
                 )
