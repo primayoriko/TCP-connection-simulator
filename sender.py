@@ -2,7 +2,6 @@ import socket
 import sys
 from filemanager import FileManager
 from packet import Metadata, Packet
-from filemanagersender import FileManagerSender
 
 HOST = '127.0.0.1'
 PORT = 1338

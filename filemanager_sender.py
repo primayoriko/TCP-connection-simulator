@@ -22,21 +22,20 @@ class FileManagerSender:
                 chunk = f.read(MAX_DATA_SIZE)
         return cnt
 
-    def changeFile(self, file_path)
+    def changeFile(self, file_path):
         self.file_path = file_path
-        self.loadPacket(MAX_LOADED_PACKET_HEAD)
         self.total_chunk = self.countTotalChunk()
+        self.loadPacket(MAX_LOADED_PACKET_HEAD)
 
     def isLoaded(self, index):
-        return index >= self.lower_bound 
-            and index <= self.upper_bound
+        return index >= self.lower_bound and index <= self.upper_bound
 
     def loadPacket(self, mid):
         self.data = []
         self.lower_bound = max(0, mid - MAX_LOADED_PACKET_HEAD)
         self.upper_bound = min(mid + MAX_LOADED_PACKET_TAIL, self.total_chunk)
-        self.metadata['name'] = os.path.basename(self.file_path)
-        self.metadata['size'] = os.path.getsize(self.file_path)
+        # self.metadata['name'] = os.path.basename(self.file_path)
+        # self.metadata['size'] = os.path.getsize(self.file_path)
         # size_chunked = 0
 
         with open(self.file_path, 'rb') as f:
