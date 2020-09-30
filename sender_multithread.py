@@ -89,5 +89,7 @@ def run():
     for thread in threads:
         thread.join()
 
+    print("All targets receive file successfully!!")
+
 if __name__ == '__main__':
     run()

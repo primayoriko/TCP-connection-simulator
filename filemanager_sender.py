@@ -9,9 +9,9 @@ MAX_DATA_SIZE = 32767
 # class that have function split data/file,
 # checking file checksum, and write data into file
 class FileManagerSender:
-    def __init__(self, file_path=''):
+    def __init__(self, file_path='', caching=True):
+        self.caching = caching
         self.changeFile(file_path)
-        self.downloaded = 0
 
     def countTotalChunk(self):
         cnt = 0
@@ -21,16 +21,26 @@ class FileManagerSender:
                 cnt += 1
                 chunk = f.read(MAX_DATA_SIZE)
         return cnt
+    
+    def useCaching(self, caching):
+        self.caching = caching
 
     def changeFile(self, file_path):
         self.file_path = file_path
         self.total_chunk = self.countTotalChunk()
-        self.loadPacket(MAX_LOADED_PACKET_HEAD)
+        if self.caching:
+            self.loadPacket(MAX_LOADED_PACKET_HEAD)
 
     def isLoaded(self, index):
-        return index >= self.lower_bound and index <= self.upper_bound
+        if self.caching:
+            return index >= self.lower_bound and index <= self.upper_bound
+        else:
+            return False
 
     def loadPacket(self, mid):
+        if not self.caching:
+            return
+
         self.data = []
         self.lower_bound = max(0, mid - MAX_LOADED_PACKET_HEAD)
         self.upper_bound = min(mid + MAX_LOADED_PACKET_TAIL, self.total_chunk)
@@ -59,17 +69,18 @@ class FileManagerSender:
                 )
     
     def getChunk(self, index):
+        if not self.useCaching:
+            with open(self.file_path, 'rb') as f:
+                if(index > 0):
+                    index -= 1
+                    f.seek(index * MAX_DATA_SIZE)
+
+                return f.read(MAX_DATA_SIZE)
+
         if(not self.isLoaded(index)):
             self.loadPacket(index)
 
         return self.data[index - self.lower_bound]
-
-    @staticmethod
-    def isMaxLoaded(packets):
-        return len(packets) >= 2 * HALFMAX_LOADED_PACKET
-
-    def writeFile(self):
-        pass
 
 if __name__ == "__main__":
     pass

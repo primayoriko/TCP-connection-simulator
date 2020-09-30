@@ -66,26 +66,26 @@ def run():
                     (packet.is_fin() and response_packet.is_finack() and curr_num == response_packet.seqnum)
                 ):
                     succ_packets_nums[num] += 1
-                    # print(
-                    #         "Packet {i} sent successfully to {host}:{port}!"
-                    #             .format(i=curr_num, host=receiver_hosts[num], port=receiver_port)
-                    #     )
+                    print(
+                            "Packet {i} sent successfully to {host}:{port}!"
+                                .format(i=curr_num, host=receiver_hosts[num], port=receiver_port)
+                        )
 
             except socket.timeout:
                 # if use_metadata and not succ_metadata[num]:
                 #     print(f"Metadata failed to sent to {receiver_hosts[num]}:{receiver_port}!")
                 # else:
-                # print(
-                #         "Packet {i} failed to sent to {host}:{port}!"
-                #             .format(i=curr_num, host=receiver_hosts[num], port=receiver_port)
-                #     )
+                print(
+                        "Packet {i} failed to sent to {host}:{port}!"
+                            .format(i=curr_num, host=receiver_hosts[num], port=receiver_port)
+                    )
                 pass
             
             finally:
-                # print(
-                #         "{0} status : {1}/{2} packet(s) sent"
-                #             .format(receiver_hosts[num], succ_packets_nums[num], packets_num)
-                #     )
+                print(
+                        "{0} status : {1}/{2} packet(s) sent"
+                            .format(receiver_hosts[num], succ_packets_nums[num], packets_num)
+                    )
                 if(succ_packets_nums[num] == packets_num):
                     finished += 1
                     print(
