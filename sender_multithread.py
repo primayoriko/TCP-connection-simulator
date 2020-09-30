@@ -1,78 +1,67 @@
 import socket
 import sys
-import time
 import threading
 from _thread import *
 from filemanager import FileManager
+from filemanager_sender import FileManagerSender
 from packet import Packet
 
 HOST = '127.0.0.1'
 PORT = 1338
 MAX_SEG_SIZE = 32774
-TIMEOUT = 3
+TIMEOUT = 0.5 # in seconds
 
-send_lock = threading.Lock()
-print_lock = threading.Lock()
+filemanager_lock = threading.Lock()
 
-def get_time_millis():
-    return int(round(time.time() * 1000))
+def create_packet(data_chunk, seqnum, isFin):
+    return Packet(
+                    pack_type='DATA' if not isFin 
+                                        else 'FIN',
+                    length=len(data_chunk),
+                    seqnum=seqnum,
+                    data=data_chunk
+                )
 
-# Packaging sequence of data into sequence of packets
-def create_packets(data_chunks):
-    packets, total_chunks = [], len(data_chunks)
-    for num in range(total_chunks):
-        packet = Packet(
-                            pack_type='DATA' if num != total_chunks - 1
-                                                else 'FIN',
-                            length=len(data_chunks[num]),
-                            seqnum=num,
-                            data=data_chunks[num]
-                        )
-        packet.checksum = Packet.checksum(packet)
-        packets.append(packet)
+def send_threaded(file_manager, reciever_addr, reciever_port):
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    sock.settimeout(TIMEOUT)
 
-    return packets
+    curr_num, packets_num = 0, file_manager.total_chunk
 
-def send_packet_threaded():
-    return 0
+    while(curr_num < packets_num):
+        sent = False
+        filemanager_lock.acquire()
+        packet = create_packet(
+                        file_manager.getChunk(curr_num),
+                        curr_num, 
+                        curr_num == packets_num - 1
+                    )
+        filemanager_lock.release()
 
-def reciever_threaded(sock, reciever_addr, reciever_port, packets):
-    numpackets, success = len(packets), 0
-    arr_succeed = [False for i in range(numpackets)]
-
-    # Loop until all data sent
-    while(success < numpackets):
-        for i in range(numpackets):
-            if(not arr_succeed[i]):
-                sent = False
-
-                # Looping packet until successfully sent
-                while(not sent):
-                    sock.sendto(Packet.to_bytes(packets[i]),
-                                (reciever_addr, reciever_port)
-                            )
-                    try:
-                        data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
-                        response_packet = Packet.from_bytes(data_response)
-                        if(
-                            (packets[i].is_data() and response_packet.is_ack())
-                            or
-                            (packets[i].is_fin() and response_packet.is_finack())
-                        ):
-                            sent = True
-                            print("Packet {0} successfully sended!".format(i))
-                    except socket.timeout:
-                        print("Timeout reached, retrying....")
-
-                arr_succeed[i] = sent
-                success += 1 
+        while(not sent):
+            sock.sendto(Packet.to_bytes(packet), (reciever_addr, reciever_port))
+            try:
+                data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
+                response_packet = Packet.from_bytes(data_response)
+                if(
+                    (packet.is_data() and response_packet.is_ack() 
+                        and curr_num == response_packet.seqnum)
+                    or
+                    (packet.is_fin() and response_packet.is_finack() 
+                        and curr_num == response_packet.seqnum)
+                ):
+                    print(f"Packet {curr_num} successfully sent to {reciever_addr}:{reciever_port}!")
+                    sent = True
+                    curr_num += 1
+            except socket.timeout:
+                print(f"Timeout to {reciever_addr}:{reciever_port} reached, retrying....")
+            finally:
                 print(
                         "Status : {0}/{1} packet(s) sent"
-                            .format(success, numpackets)
+                            .format(curr_num, packets_num)
                     )
-                print("Details : " + str(arr_succeed))
     
-    if(success == numpackets):
+    if(curr_num == packets_num):
         print("File successfully sent to {host}:{port}!"
                 .format(host=reciever_addr, port=reciever_port) 
             )
@@ -83,25 +72,13 @@ def run():
     reciever_port = int(sys.argv[2])
     file_path = sys.argv[3]
 
-    file_manager = FileManager()
-    file_manager.addFile(file_path)
-    packets = create_packets(file_manager.data)
-
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.settimeout(TIMEOUT)
-    # sock.bind((HOST, PORT))
-    
-    # print(reciever_hosts)
-    # print(reciever_port)
-    # print(file_path)
-    # print(f'File input checksum: 0x{file_manager.checksum:04x}')
-    # print(file_manager.numpackets)
+    file_manager = FileManagerSender(file_path)
 
     # Sent packets one by one per reciever 
     threads = [
                 threading.Thread(
-                                    target=reciever_threaded,
-                                    args=(sock, reciever_addr, reciever_port, packets,)
+                                    target=send_threaded,
+                                    args=(file_manager, reciever_addr, reciever_port,)
                                 )
                 for reciever_addr in reciever_hosts
             ]
