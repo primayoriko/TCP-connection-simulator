@@ -69,14 +69,14 @@ class FileManagerSender:
                 )
     
     def getChunk(self, index):
-        if not self.useCaching:
+        if not self.caching:
             with open(self.file_path, 'rb') as f:
                 if(index > 0):
                     index -= 1
                     f.seek(index * MAX_DATA_SIZE)
 
                 return f.read(MAX_DATA_SIZE)
-
+                
         if(not self.isLoaded(index)):
             self.loadPacket(index)
 
