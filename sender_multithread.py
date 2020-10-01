@@ -67,6 +67,7 @@ def send_threaded(file_manager, reciever_addr, reciever_port):
             )
 
 def run():
+    import time
     # Get parameter from command-line
     reciever_hosts = sys.argv[1].split(',')
     reciever_port = int(sys.argv[2])
@@ -85,11 +86,12 @@ def run():
 
     for thread in threads:
         thread.start()
-
+    start_time = time.perf_counter()
     for thread in threads:
         thread.join()
+    end_time = time.perf_counter()
 
     print("All targets receive file successfully!!")
-
+    print(f'Program finished sending file for {(end_time-start_time)*1000:.2f}ms')
 if __name__ == '__main__':
     run()

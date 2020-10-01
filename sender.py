@@ -1,5 +1,6 @@
 import socket
 import sys
+from time import perf_counter
 from filemanager import FileManager
 from packet import Metadata, Packet
 
@@ -25,6 +26,7 @@ def create_packets(data_chunks):
     return packets
 
 def run():
+    import time
     # Get parameter from command-line
     receiver_hosts = sys.argv[1].split(',')
     receiver_port = int(sys.argv[2])
@@ -46,13 +48,13 @@ def run():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
-    
+    start_time = time.perf_counter()
     # print(receiver_hosts)
     # print(receiver_port)
     # print(file_path)
     # print(f'File input checksum: 0x{file_manager.checksum:04x}')
     # print(file_manager.numpackets)
-
+    
     while(finished < receivers_num):
         for num in range(receivers_num):
             curr_num = succ_packets_nums[num]
@@ -113,6 +115,7 @@ def run():
 
     if(finished == packets_num):
         print("All file transfer succeed!!")
-
+    end_time = time.perf_counter()
+    print(f'Program finished sending file for {(end_time-start_time)*1000:.2f}ms')
 if __name__ == '__main__':
     run()

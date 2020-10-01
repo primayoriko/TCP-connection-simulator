@@ -1,7 +1,7 @@
 import socket
 import sys
 from packet import Packet, Metadata, unpackPacket
-from filemanager import FileManager
+from filemanager_sender import FileManagerSender
 
 PORT = int(sys.argv[1])
 ADDRESS = "127.0.0.1"
@@ -27,7 +27,7 @@ def run():
     print("[+] Listening on %s port %d" % (ADDRESS, PORT))
     
     # Resources to receive data
-    file_manager = FileManager()
+    file_manager = FileManagerSender(mode='receiving')
     prev_seqnum = -1
 
     # Listen loop
@@ -51,7 +51,7 @@ def run():
         if pkt.seqnum == prev_seqnum + 1 and same_checksum(pkt):
             
             # Append to received packet array
-            file_manager.addData(pkt.seqnum, pkt.data)
+            file_manager.writePacket(pkt.seqnum, pkt.data)
             prev_seqnum += 1
 
             if pkt.is_fin():
@@ -120,7 +120,7 @@ def run():
 
     
     # FileManager piece the data together here, save to ./out/downloaded
-    print(f'Writing data complete! {file_manager.metadata["name"]} with size {file_manager.size_downloaded} successfully written to ./out!')
+    print(f'Writing data complete! file "{file_manager.metadata["name"]}" with size {file_manager.size_downloaded} successfully written to ./out!')
 
 if __name__ == '__main__':
     run()
