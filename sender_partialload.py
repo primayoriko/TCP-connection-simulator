@@ -18,20 +18,15 @@ def create_packet(data_chunk, seqnum, isFin):
                 )
 
 def run():
+    import time
     # Get parameter from command-line
     receiver_hosts = sys.argv[1].split(',')
     receiver_port = int(sys.argv[2])
     file_path = sys.argv[3]
     use_metadata = False
-    use_multithreading = False
     if len(sys.argv) > 4:
         if sys.argv[4] == '1':
             use_metadata = True
-        elif sys.argv[4] == '2':
-            use_multithreading = True
-        elif sys.argv[4] == '3':
-            use_metadata = True
-            use_multithreading = True
 
     file_manager = FileManagerSender(file_path)
     packets_num = file_manager.total_chunk
@@ -45,6 +40,7 @@ def run():
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
 
+    start_time = time.perf_counter()
     while(finished < receivers_num):
         for num in range(receivers_num):
             curr_num = succ_packets_nums[num]
@@ -103,5 +99,7 @@ def run():
     if(finished == receivers_num):
         print("All targets receive file successfully!!")
 
+    end_time = time.perf_counter()
+    print(f'Program finished sending file for {(end_time-start_time)*1000:.2f}ms')
 if __name__ == '__main__':
     run()
