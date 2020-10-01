@@ -1,7 +1,7 @@
 import socket
 import sys
 from packet import Packet, Metadata, unpackPacket
-from filemanager_sender import FileManagerSender
+from filemanager import FileManager
 
 PORT = int(sys.argv[1])
 ADDRESS = "127.0.0.1"
@@ -27,7 +27,7 @@ def run():
     print("[+] Listening on %s port %d" % (ADDRESS, PORT))
     
     # Resources to receive data
-    file_manager = FileManagerSender(mode='receiving')
+    file_manager = FileManager(mode='receiving')
     prev_seqnum = -1
 
     # Listen loop

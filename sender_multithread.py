@@ -3,7 +3,6 @@ import sys
 import threading
 from _thread import *
 from filemanager import FileManager
-from filemanager_sender import FileManagerSender
 from packet import Packet
 
 HOST = '127.0.0.1'
@@ -73,7 +72,7 @@ def run():
     reciever_port = int(sys.argv[2])
     file_path = sys.argv[3]
 
-    file_manager = FileManagerSender(file_path)
+    file_manager = FileManager(file_path)
 
     # Sent packets one by one per reciever 
     threads = [

@@ -16,10 +16,10 @@ then
     python3 sender_multithread.py $1 $2 $3
   else
     echo "Starting metadata mode!"
-    python3 sender_partialload.py $1 $2 $3 $4
+    python3 sender.py $1 $2 $3 $4
   fi
 else
   echo "Starting normal mode!"
-  python3 sender_partialload.py $1 $2 $3
+  python3 sender.py $1 $2 $3
 fi
 # python3 sender_multithread.py $1 $2 $3

@@ -1,40 +1,97 @@
 import os
 import math
 
+# Const
+MAX_LOADED_PACKET_HEAD = 500
+MAX_LOADED_PACKET_TAIL = 3500
+MAX_DATA_SIZE = 32767
+
 # class that have function split data/file,
 # checking file checksum, and write data into file
 class FileManager:
-    def __init__(self):
-        self.data = []
-        self.sequence = []
+    def __init__(self, file_path='', caching=True, mode='sending'):
         self.metadata = {'name': 'downloaded', 'size': 0}
-        self.size_downloaded = 0
-        self.numpackets = 0
-        self.firstWrite = True
+        if mode == 'sending':
+            self.caching = caching
+            self.changeFile(file_path)
+        elif mode == 'receiving':
+            self.firstWrite = True
+            self.size_downloaded = 0
+            self.total_chunk = 0
+    
+    def useCaching(self, caching):
+        self.caching = caching
+        if self.caching:
+            self.loadPacket(MAX_LOADED_PACKET_HEAD)
 
-    # Adding data
-    def addData(self, seqnum, data):
-        self.writePacket(seqnum, data)
-        self.size_downloaded += len(data)
-        if self.metadata['name'] == 'downloaded':
-            self.metadata['size'] += len(data)
-            self.numpackets += 1
-            print(f'Total file data written: {self.size_downloaded} | total numpackets received: {self.numpackets}')    
+    def changeFile(self, file_path):
+        self.file_path = file_path
+        self.metadata['name'] = os.path.basename(self.file_path)
+        self.metadata['size'] = os.path.getsize(self.file_path)
+        self.total_chunk = math.ceil(self.metadata['size'] / 32767)
+        if self.caching:
+            self.loadPacket(MAX_LOADED_PACKET_HEAD)
+
+    def isLoaded(self, index):
+        if self.caching:
+            return index >= self.lower_bound and index <= self.upper_bound
         else:
-            print(f'File data written: {self.size_downloaded/self.metadata["size"]*100:3.0f}% {self.size_downloaded}/{self.metadata["size"]}')
+            return False
 
-    # Optimization to write file per packet if packet size is known beforehand
+    def loadPacket(self, mid):
+        if not self.caching:
+            return
+
+        self.data = []
+        self.lower_bound = max(0, mid - MAX_LOADED_PACKET_HEAD)
+        self.upper_bound = min(mid + MAX_LOADED_PACKET_TAIL, self.total_chunk)
+
+        with open(self.file_path, 'rb') as f:
+            f.seek(self.lower_bound * MAX_DATA_SIZE)
+            seg_num = self.lower_bound
+            while (seg_num <= self.upper_bound):
+                data_chunk = f.read(MAX_DATA_SIZE)
+                if(not data_chunk):
+                    break
+                
+                self.data.append(data_chunk)
+                seg_num += 1
+
+            # self.upper_bound = min(self.upper_bound, seg_num)
+            print(
+                    "Load chunk(s) from indexes {0} until {1} success!"
+                        .format(self.lower_bound, self.upper_bound)
+                )
+    
+    def getChunk(self, index):
+        if not self.caching:
+            with open(self.file_path, 'rb') as f:
+                if(index > 0):
+                    index -= 1
+                    f.seek(index * MAX_DATA_SIZE)
+
+                return f.read(MAX_DATA_SIZE)
+                
+        if(not self.isLoaded(index)):
+            self.loadPacket(index)
+
+        return self.data[index - self.lower_bound]
+
+    # Add Metadata Information
     def addMetadata(self, name, size):
         self.metadata['name'] = name
         self.metadata['size'] = size
-        self.numpackets = self.totalPacketNeeded()
-
-    # Get total packet needed if size is known
-    def totalPacketNeeded(self):
-        return math.ceil(self.metadata['size'] / 32767)
-
-    # Write data per packet received
+        self.total_chunk = math.ceil(self.metadata['size'] / 32767)
+    
+    # RECEIVER: Write data per packet received
     def writePacket(self, seqnum, data):
+        self.size_downloaded += len(data)
+        if self.metadata['name'] == 'downloaded':
+            self.metadata['size'] += len(data)
+            self.total_chunk += 1
+            print(f'Total file data written: {self.size_downloaded} | total numpackets received: {self.total_chunk}')    
+        else:
+            print(f'File data written: {self.size_downloaded/self.metadata["size"]*100:3.0f}% {self.size_downloaded}/{self.metadata["size"]}')
         file_offset = seqnum * 32767
         output_file = os.path.join('.', 'out', self.metadata['name'])
         if self.firstWrite:
@@ -47,38 +104,5 @@ class FileManager:
                 f.seek(file_offset)
                 f.write(data)
 
-    # Check if File Manager has all the data if the size is known
-    def isComplete(self):
-        return self.metadata['size'] == self.size_downloaded
-
-    # Adding file for sender
-    def addFile(self, file_path):
-        self.file_path = file_path
-        self.initializeData()
-
-    # Splitting file and get basic metadata info
-    def initializeData(self):
-        self.metadata['name'] = os.path.basename(self.file_path)
-        self.metadata['size'] = os.path.getsize(self.file_path)
-        size_chunked = 0
-        with open(self.file_path, 'rb') as f:
-            data_chunk = f.read(32767)
-            while data_chunk:
-                self.data.append(data_chunk)
-                self.numpackets += 1
-                size_chunked += len(data_chunk)
-                if self.numpackets % 10 == 0:
-                    print(f'Processing file: {size_chunked/self.metadata["size"]*100:3.0f}% [{size_chunked} readed out of {self.metadata["size"]}]')
-                data_chunk = f.read(32767)
-        print('Processing file done!')
-        self.sequence = [x for x in range(self.numpackets)]
-
 if __name__ == "__main__":
-    # from dumper import dump
-    import random
-    file_path = 'Adobe.Photoshop.Lightroom.Classic.v8.4.1.10.Full.Version.7z'
-    file_manager = FileManager()
-    file_manager.addFile(file_path)
-    # dump(file_manager)
-    # shuffleOrder(file_manager)
-    file_manager.writeFile()
+    pass

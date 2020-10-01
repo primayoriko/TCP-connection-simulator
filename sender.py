@@ -1,29 +1,21 @@
 import socket
 import sys
-from time import perf_counter
+from packet import Metadata, Packet, unpackPacket
 from filemanager import FileManager
-from packet import Metadata, Packet
 
 HOST = '127.0.0.1'
 PORT = 1338
 MAX_SEG_SIZE = 32774
-TIMEOUT = 0.5 # 500ms
+TIMEOUT = 0.5 # 0.5 secs
 
-# Packaging sequence of data into sequence of packets
-def create_packets(data_chunks):
-    packets, total_chunks = [], len(data_chunks)
-    for num in range(total_chunks):
-        packet = Packet(
-                            pack_type='DATA' if num != total_chunks - 1
-                                                else 'FIN',
-                            length=len(data_chunks[num]),
-                            seqnum=num,
-                            data=data_chunks[num]
-                        )
-        packet.checksum = Packet.checksum(packet)
-        packets.append(packet)
-
-    return packets
+def create_packet(data_chunk, seqnum, isFin):
+    return Packet(
+                    pack_type='DATA' if not isFin 
+                                        else 'FIN',
+                    length=len(data_chunk),
+                    seqnum=seqnum,
+                    data=data_chunk
+                )
 
 def run():
     import time
@@ -33,12 +25,11 @@ def run():
     file_path = sys.argv[3]
     use_metadata = False
     if len(sys.argv) > 4:
-        use_metadata = sys.argv[4]
+        if sys.argv[4] == '1':
+            use_metadata = True
 
-    file_manager = FileManager()
-    file_manager.addFile(file_path)
-    packets = create_packets(file_manager.data)
-    packets_num = len(packets)
+    file_manager = FileManager(file_path)
+    packets_num = file_manager.total_chunk
 
     finished, receivers_num = 0, len(receiver_hosts)
     succ_packets_nums = [0 for i in range(receivers_num)]
@@ -48,44 +39,35 @@ def run():
 
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.settimeout(TIMEOUT)
+
     start_time = time.perf_counter()
-    # print(receiver_hosts)
-    # print(receiver_port)
-    # print(file_path)
-    # print(f'File input checksum: 0x{file_manager.checksum:04x}')
-    # print(file_manager.numpackets)
-    
     while(finished < receivers_num):
         for num in range(receivers_num):
             curr_num = succ_packets_nums[num]
             if(curr_num == packets_num):
                 continue
             
+            packet = create_packet(file_manager.getChunk(curr_num), 
+                                    curr_num, curr_num == packets_num - 1)
             if use_metadata and not succ_metadata[num]:
                 sock.sendto(Metadata.to_bytes(metadata),
                         (receiver_hosts[num], receiver_port)
                     )
             else:
-                sock.sendto(Packet.to_bytes(packets[curr_num]),
+                sock.sendto(Packet.to_bytes(packet),
                             (receiver_hosts[num], receiver_port)
                         )
             try:
                 data_response, addr = sock.recvfrom(MAX_SEG_SIZE)
-                print(data_response)
-                print('from')
-                print(addr)
-                print(f'at {receiver_hosts[num]} turn with curr_num = {curr_num}')
-                print(f'succ_packet for {receiver_hosts[num]}: {succ_packets_nums[num]}')
                 response_packet = Packet.from_bytes(data_response)
                 if use_metadata and not succ_metadata[num]:
                     print(f"Metadata sent successfully to {receiver_hosts[num]}:{receiver_port}!")
                     succ_metadata[num] = True
                 elif(
-                    (packets[curr_num].is_data() and response_packet.is_ack() and curr_num == response_packet.seqnum)
+                    (packet.is_data() and response_packet.is_ack() and curr_num == response_packet.seqnum)
                     or
-                    (packets[curr_num].is_fin() and response_packet.is_finack() and curr_num == response_packet.seqnum)
+                    (packet.is_fin() and response_packet.is_finack() and curr_num == response_packet.seqnum)
                 ):
-                    print(f'accepted from {addr}! now succpackets: {succ_packets_nums[num]} now prev seqnum: {response_packet.seqnum}')
                     succ_packets_nums[num] += 1
                     print(
                             "Packet {i} sent successfully to {host}:{port}!"
@@ -100,6 +82,7 @@ def run():
                             "Packet {i} failed to sent to {host}:{port}!"
                                 .format(i=curr_num, host=receiver_hosts[num], port=receiver_port)
                         )
+                pass
             
             finally:
                 print(
@@ -113,8 +96,9 @@ def run():
                             .format(host = receiver_hosts[num])
                     )
 
-    if(finished == packets_num):
-        print("All file transfer succeed!!")
+    if(finished == receivers_num):
+        print("All targets receive file successfully!!")
+
     end_time = time.perf_counter()
     print(f'Program finished sending file for {(end_time-start_time)*1000:.2f}ms')
 if __name__ == '__main__':
