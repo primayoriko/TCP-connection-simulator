@@ -25,11 +25,11 @@ def run():
     use_metadata = False
     use_multithreading = False
     if len(sys.argv) > 4:
-        if sys.argv[4] == 1:
+        if sys.argv[4] == '1':
             use_metadata = True
-        elif sys.argv[4] == 2:
+        elif sys.argv[4] == '2':
             use_multithreading = True
-        elif sys.argv[4] == 3:
+        elif sys.argv[4] == '3':
             use_metadata = True
             use_multithreading = True
 
